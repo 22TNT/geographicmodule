@@ -4,7 +4,7 @@ export type Frame = {
     id: string,
     windSpeed: number,
     windDirection: number,
-    windFunction: () => void,
+    windFunction: () => [number, number],
     timeOfDay: number,
     tick: number,
     grid: Grid,

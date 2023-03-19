@@ -78,7 +78,7 @@ export class Simulation {
             timeOfDay: 0,
             windSpeed: 0,
             windDirection: 0,
-            windFunction: () => {},
+            windFunction: () => {return [Math.random(), Math.random()]},
             grid: {
                     id: nanoid(),
                     startLat: this.startLat,
@@ -89,7 +89,11 @@ export class Simulation {
         );
     };
 
-    public nextFrame() {
-        let frame = this.frames[-1]
+    public nextFrame(): void {
+        let frame: Frame = {...this.frames.slice(-1)[0]};
+        frame.windDirection = frame.windFunction()[0];
+        frame.windSpeed = frame.windFunction()[1];
+        // do contamination propagation stuff
+        this.frames.push(frame);
     }
 }
