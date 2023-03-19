@@ -1,5 +1,6 @@
 import { Frame} from "./frame";
 import { Node} from "./node";
+import {State} from "./state";
 import {nanoid} from "nanoid";
 
 export class Simulation {
@@ -93,7 +94,22 @@ export class Simulation {
         let frame: Frame = {...this.frames.slice(-1)[0]};
         frame.windDirection = frame.windFunction()[0];
         frame.windSpeed = frame.windFunction()[1];
+        frame.timeOfDay = (frame.timeOfDay+1)%1440;
+        frame.tick+=1;
         // do contamination propagation stuff
         this.frames.push(frame);
     }
+
+    public addContamination(lat: number, lng: number, state: State): void {
+        let frame: Frame = {...this.frames.slice(-1)[0]};
+        for (let i=0; i<frame.grid.map.length; i++) {
+            for (let j=0; j<frame.grid.map[i].length; j++) {
+                if (frame.grid.map[i][j].lat === lat && frame.grid.map[i][j].lng === lng) {
+                    this.frames.slice(-1)[0].grid.map[i][j].contaminations.push(state);
+                    break;
+                }
+            }
+        }
+        throw Error("incorrect coordinates");
+    };
 }
