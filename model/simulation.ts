@@ -94,7 +94,7 @@ export class Simulation {
         let frame: Frame = {...this.frames.slice(-1)[0]};
         frame.windDirection = frame.windFunction()[0];
         frame.windSpeed = frame.windFunction()[1];
-        frame.timeOfDay = (frame.timeOfDay+1)%1440;
+        frame.timeOfDay = (frame.timeOfDay+1)%1440; // 1440 = minutes in a day
         frame.tick+=1;
         // do contamination propagation stuff
         this.frames.push(frame);
@@ -103,10 +103,14 @@ export class Simulation {
     public addContamination(lat: number, lng: number, state: State): void {
         let frame: Frame = {...this.frames.slice(-1)[0]};
         for (let i=0; i<frame.grid.map.length; i++) {
-            for (let j=0; j<frame.grid.map[i].length; j++) {
-                if (frame.grid.map[i][j].lat === lat && frame.grid.map[i][j].lng === lng) {
-                    this.frames.slice(-1)[0].grid.map[i][j].contaminations.push(state);
-                    break;
+            const node = frame.grid.map[i][0];
+            if (node.lat <= lat && lat < this.getOffsetCoords(node.lat, node.lng, this.length, 0)[0]){
+                for (let j=0; j<frame.grid.map[i].length; j++) {
+                    const node = frame.grid.map[i][j];
+                    if (node.lng <= lng && lng < this.getOffsetCoords(node.lat, node.lng, 0, this.length)[1])
+                    {
+                        this.frames[this.frames.length-1].grid.map[i][j].contaminations.push(state);
+                    }
                 }
             }
         }
