@@ -1,4 +1,4 @@
-import { Grid} from "./grid";
+import { Node} from "./node";
 
 export type Frame = {
     id: string,
@@ -7,5 +7,5 @@ export type Frame = {
     windFunction: () => [number, number],
     timeOfDay: number,
     tick: number,
-    grid: Grid,
+    map: Node[][],
 }

@@ -12,6 +12,7 @@ export class Simulation {
     length: number;
     grid_length: number;
     grid_width: number;
+    id: string;
 
     private haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
         function toRad(x: number): number {
@@ -45,34 +46,36 @@ export class Simulation {
         gridWidth: number,
         length: number,
     ): Node[][] {
-        let map : Node[][];
+        let map : Node[][] = [];
+        for (let i = 0; i<gridLength; i++) {
+            map[i] = [];
+        }
         let currentLat = startLat;
         let currentLng = startLng;
         for (let i=0; i<=gridLength; i++) {
             for (let j=0; j<gridWidth; j++) {
                 map[i][j] = {
-                    id: nanoid(),
                     lat: currentLat,
                     lng: currentLng,
-                    length: length,
                     contaminations: [],
                 };
                 currentLng = this.getOffsetCoords(currentLat, currentLng, length, 0)[1];
             }
             currentLng = startLng;
-            currentLat = this.getOffsetCoords(startLat, startLng, 0, length)[0];
+            currentLat = this.getOffsetCoords(currentLat, currentLng, 0, length)[0];
         }
         return map;
     }
 
     constructor(startLat: number, startLng: number, endLat:number, endLng: number, length: number, ) {
+        this.id = nanoid();
         this.startLat = startLat;
         this.startLng = startLng;
         this.endLat = endLat;
         this.endLng = endLng;
         this.length = length;
-        this.grid_length = this.haversineDistance(startLat, startLng, startLat, endLng) / length;
-        this.grid_width = this.haversineDistance(startLat, startLng, endLat, startLng) / length;
+        this.grid_length = this.haversineDistance(startLat, startLng, endLat, startLng) / length;
+        this.grid_width = this.haversineDistance(startLat, startLng, startLat, endLng) / length;
         this.frames.push({
             id: nanoid(),
             tick: 0,
@@ -80,12 +83,7 @@ export class Simulation {
             windSpeed: 0,
             windDirection: 0,
             windFunction: () => {return [Math.random(), Math.random()]},
-            grid: {
-                    id: nanoid(),
-                    startLat: this.startLat,
-                    startLng: this.startLng,
-                    map: this.setupMap(startLat, startLng, this.grid_length, this.grid_width, length),
-                },
+            map: this.setupMap(startLat, startLng, this.grid_length, this.grid_width, length),
             }
         );
     };
@@ -102,14 +100,15 @@ export class Simulation {
 
     public addContamination(lat: number, lng: number, state: State): void {
         let frame: Frame = {...this.frames.slice(-1)[0]};
-        for (let i=0; i<frame.grid.map.length; i++) {
-            const node = frame.grid.map[i][0];
-            if (node.lat <= lat && lat < this.getOffsetCoords(node.lat, node.lng, this.length, 0)[0]){
-                for (let j=0; j<frame.grid.map[i].length; j++) {
-                    const node = frame.grid.map[i][j];
-                    if (node.lng <= lng && lng < this.getOffsetCoords(node.lat, node.lng, 0, this.length)[1])
+        for (let i=0; i<frame.map.length; i++) {
+            const node = frame.map[i][0];
+            if (node.lat <= lat && lat < this.getOffsetCoords(node.lat, node.lng, this.length, this.length)[0]){
+                for (let j=0; j<frame.map[i].length; j++) {
+                    const node = frame.map[i][j];
+                    if (node.lng <= lng && lng < this.getOffsetCoords(node.lat, node.lng, this.length, this.length)[1])
                     {
-                        this.frames[this.frames.length-1].grid.map[i][j].contaminations.push(state);
+                        this.frames[this.frames.length-1].map[i][j].contaminations.push(state);
+                        return;
                     }
                 }
             }
