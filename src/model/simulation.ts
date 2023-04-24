@@ -30,7 +30,7 @@ export class Simulation {
         return R * c; // meters
     }
 
-    private getOffsetCoords(lat: number, lng: number, easternOffset: number, southernOffset: number): [number, number] {
+    public getOffsetCoords(lat: number, lng: number, easternOffset: number, southernOffset: number): [number, number] {
         const R = 6378.137; // km
         const m = (1 / ((Math.PI/180) * R)) / 1000; // 1 meter in degrees
         const new_lat = lat + (southernOffset * m);
