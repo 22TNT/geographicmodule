@@ -146,6 +146,14 @@ app.get("/simulation/:id/info", (req: Request, res: Response) => {
     }));
 });
 
+app.get("/simulation/:id/source", (req: Request, res: Response) => {
+    if (!simulations[req.params.id]) {
+        res.status(404).send("No simulation with that id");
+    }
+
+    const sim = simulations[req.params.id];
+    res.status(200).send(JSON.stringify(sim.sources));
+})
 
 app.get("/simulation/v2/:id/frame/:index", (req: Request, res: Response) => {
     // get all not empty nodes from a frame with all 4 coords
@@ -157,14 +165,16 @@ app.get("/simulation/v2/:id/frame/:index", (req: Request, res: Response) => {
         res.status(404).send("No frames in that simulation");
     }
 
-    const len = simulations[req.params.id].length;
+    const len = simulations[req.params.id].frames.length;
     let frame: Frame;
-    const index: number = +req.params.index;
-    if (index === -1) {
-        frame = simulations[req.params.id].frames.slice(-1)[0];
+    const index: number = parseInt(req.params.index);
+    if (len + index < 0 || index>=len) {
+        res.sendStatus(400);
     }
-
-    if (simulations[req.params.id].frames.length >= index) {
+    else if ((index < 0) && (len + index >= 0)) {
+        frame = simulations[req.params.id].frames[len+index];
+    }
+    else {
         frame = simulations[req.params.id].frames[index];
     }
 

@@ -5,6 +5,7 @@ import {Material} from "./material";
 import {ContaminationSource} from "./contaminationsource";
 import {nanoid} from "nanoid";
 import {Wind} from "./wind";
+import {cloneDeep} from "lodash";
 
 export class Simulation {
     frames: Frame[] = [];
@@ -104,18 +105,19 @@ export class Simulation {
     };
 
     public nextFrame(): void {
-        let frame: Frame = {...this.frames.slice(-1)[0]};
+        let frame: Frame = cloneDeep(this.frames.slice(-1)[0]);
         frame.tick+=1;
+        frame.id=nanoid();
         const wind: Wind = this.winds.get(this.keyFinder(frame.tick));
         frame.windDirection = wind.direction;
         frame.windSpeed = wind.speed;
         frame.timeOfDay = (frame.timeOfDay+1)%1440; // 1440 = minutes in a day
 
-        for (let i=0; i<frame.map.length; i++) {
+        /*for (let i=0; i<frame.map.length; i++) {
             for (let j=0; j<frame.map[i].length; j++) {
                 frame.map[i][j].contaminations = [];
             }
-        }
+        }*/
 
         // do contamination propagation stuff
         const velocity_x = Math.sin(frame.windDirection * (Math.PI/180)) * wind.speed;
@@ -130,8 +132,8 @@ export class Simulation {
                                 (source.power)
                                 / (Math.pow(2*Math.PI, 3/2)
                                     * source.dispersionVertical
-                                    *source.dispersionHorizontal
-                                    *source.dispersionHorizontal)
+                                    * source.dispersionHorizontal
+                                    * source.dispersionHorizontal)
                             )
                             * Math.exp(
                                 - (
