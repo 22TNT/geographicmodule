@@ -20,11 +20,11 @@ export class Simulation {
     grid_width: number;
     id: string;
 
-    private keyFinder(val: number) {
+    public keyFinder(val: number) {
         let maxKey = -1;
         let keys: number[] = [...this.winds.keys()].sort((a, b) => (a-b));
         keys.forEach(key => {
-            if (maxKey < 0 || val < key) {
+            if (maxKey < 0 || val >= key) {
                 maxKey = Math.max(maxKey, key);
             }
         });

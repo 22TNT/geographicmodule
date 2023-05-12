@@ -108,6 +108,17 @@ app.post("/simulation/:id/wind", (req: Request, res: Response) => {
     res.sendStatus(200);
 })
 
+app.get("/simulation/:id/wind/:index", (req:Request, res:Response) => {
+    if (!simulations[req.params.id]) {
+        res.status(404).send("No simulation with that id");
+    }
+
+    const sim = simulations[req.params.id];
+    res.status(200).send(
+        JSON.stringify(sim.winds.get(sim.keyFinder(parseInt(req.params.index))))
+    )
+})
+
 app.get("/simulation/:id/frame/:index", (req: Request, res: Response) => {
     // get a certain frame
     if (!simulations[req.params.id]) {
