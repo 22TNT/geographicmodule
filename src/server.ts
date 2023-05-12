@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import {Simulation} from "./model/simulation";
 import {Frame} from "./model/frame";
 import {State} from "./model/state";
+
 const cors = require("cors");
 const PORT = 3001;
 
@@ -30,12 +31,12 @@ app.post("/simulation", (req: Request, res: Response) => {
         lat2, lng2,
         len,
     } = req.body;
-    const sim = new Simulation(lat1, lng1, lat2, lng2, len);
+    const sim = new Simulation(parseFloat(lat1), parseFloat(lng1), parseFloat(lat2), parseFloat(lng2), parseFloat(len),);
     simulations[sim.id] = sim;
-    res.status(201).json({"id":sim.id});
+    res.status(201).json({"id": sim.id});
 });
 
-app.post("/simulation/:id/contamination", (req: Request, res: Response) =>{
+app.post("/simulation/:id/contamination", (req: Request, res: Response) => {
     // add new contamination
     if (!simulations[req.params.id]) {
         res.status(404).json("No simulation with that id");
@@ -48,11 +49,33 @@ app.post("/simulation/:id/contamination", (req: Request, res: Response) =>{
     try {
         simulations[req.params.id].addContamination(lat, lng, state);
         res.sendStatus(200);
-    }
-    catch (e) {
+    } catch (e) {
         res.status(400).json("Incorrect coordinates");
     }
 });
+
+app.post("/simulation/:id/source", (req: Request, res:Response) => {
+    if (!simulations[req.params.id]) {
+        res.status(404).json("No simulation with that id");
+    }
+    const {
+        lat,
+        lng,
+        height,
+        power,
+        dispH,
+        dispV,
+        material,
+    } = req.body;
+    try {
+        simulations[req.params.id].addSource(lat, lng, height, material, power, dispH, dispV);
+        res.sendStatus(200);
+    }
+    catch (e) {
+        res.status(500).json("something went wrong");
+    }
+
+})
 
 app.post("/simulation/:id/frame", (req: Request, res: Response) => {
     // advance by a number of frames
@@ -65,11 +88,25 @@ app.post("/simulation/:id/frame", (req: Request, res: Response) => {
         res.status(400).send("Frames has to be positive");
     }
 
-    for (let i: number =0; i<frames; i++) {
+    for (let i: number = 0; i < frames; i++) {
         simulations[req.params.id].nextFrame();
     }
     res.status(200).send(`${simulations[req.params.id].frames.length}`);
 });
+
+app.post("/simulation/:id/wind", (req: Request, res: Response) => {
+    if (!simulations[req.params.id]) {
+        res.status(404).send("No simulation with that id");
+    }
+
+    const {
+        tick,
+        wind,
+    } = req.body;
+
+    simulations[req.params.id].addWind(tick, wind);
+    res.sendStatus(200);
+})
 
 app.get("/simulation/:id/frame/:index", (req: Request, res: Response) => {
     // get a certain frame
@@ -88,14 +125,29 @@ app.get("/simulation/:id/frame/:index", (req: Request, res: Response) => {
 
     if (simulations[req.params.id].frames.length >= index) {
         res.status(200).send(JSON.stringify(simulations[req.params.id].frames[index]));
-    }
-
-    else {
+    } else {
         res.status(500).send("Unreachable");
     }
 });
 
-app.get("/v2/simulation/:id/frame/:index", (req: Request, res: Response) => {
+app.get("/simulation/:id/info", (req: Request, res: Response) => {
+    if (!simulations[req.params.id]) {
+        res.status(404).send("No simulation with that id");
+    }
+
+    const sim = simulations[req.params.id];
+    res.status(200).send(JSON.stringify({
+        id: sim.id,
+        lat1: sim.startLat,
+        lng1: sim.startLng,
+        lat2: sim.endLat,
+        lng2: sim.endLng,
+        length: sim.length,
+    }));
+});
+
+
+app.get("/simulation/v2/:id/frame/:index", (req: Request, res: Response) => {
     // get all not empty nodes from a frame with all 4 coords
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
@@ -117,8 +169,8 @@ app.get("/v2/simulation/:id/frame/:index", (req: Request, res: Response) => {
     }
 
     let nodes: ExportableNode[] = [];
-    for (let i =0; i<frame.map.length; i++) {
-        for (let j =0; j<frame.map[i].length; j++) {
+    for (let i = 0; i < frame.map.length; i++) {
+        for (let j = 0; j < frame.map[i].length; j++) {
             const node = frame.map[i][j];
             if (node.contaminations.length !== 0) {
                 const latlng: [number, number] = Simulation.prototype.getOffsetCoords(node.lat, node.lng, len, len);
