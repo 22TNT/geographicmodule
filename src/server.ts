@@ -68,7 +68,14 @@ app.post("/simulation/:id/source", (req: Request, res:Response) => {
         material,
     } = req.body;
     try {
-        simulations[req.params.id].addSource(lat, lng, height, material, power, dispH, dispV);
+        simulations[req.params.id].addSource(
+            parseFloat(lat),
+            parseFloat(lng),
+            parseFloat(height),
+            material,
+            parseFloat(power),
+            parseFloat(dispH),
+            parseFloat(dispV));
         res.sendStatus(200);
     }
     catch (e) {
@@ -104,7 +111,8 @@ app.post("/simulation/:id/wind", (req: Request, res: Response) => {
         wind,
     } = req.body;
 
-    simulations[req.params.id].addWind(tick, wind);
+    simulations[req.params.id].addWind(parseInt(tick), {
+        direction: parseFloat(wind.direction), speed: parseFloat(wind.speed)});
     res.sendStatus(200);
 })
 
