@@ -10,7 +10,7 @@ import {cloneDeep} from "lodash";
 export class Simulation {
     frames: Frame[] = [];
     sources: ContaminationSource[] = [];
-    winds = new Map<number, Wind>();
+    winds = new Map<number, Wind>().set(0, {direction: 0, speed: 0});
     startLat: number;
     startLng: number;
     endLat: number;
@@ -31,7 +31,7 @@ export class Simulation {
         return maxKey;
     }
 
-    private haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    public haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
         function toRad(x: number): number {
             return x * Math.PI / 180;
         }
@@ -113,19 +113,24 @@ export class Simulation {
         frame.windSpeed = wind.speed;
         frame.timeOfDay = (frame.timeOfDay+1)%1440; // 1440 = minutes in a day
 
-        /*for (let i=0; i<frame.map.length; i++) {
-            for (let j=0; j<frame.map[i].length; j++) {
-                frame.map[i][j].contaminations = [];
+
+        /*if (this.keyFinder(frame.tick) === frame.tick) {
+            for (let i=0; i<frame.map.length; i++) {
+                for (let j=0; j<frame.map[i].length; j++) {
+                    frame.map[i][j].contaminations = [];
+                }
             }
         }*/
 
         // do contamination propagation stuff
-        const velocity_x = Math.sin(frame.windDirection * (Math.PI/180)) * wind.speed;
-        const velocity_y = Math.cos(frame.windDirection * (Math.PI/180)) * wind.speed;
+        const velocity_y = Math.sin(frame.windDirection * (Math.PI/180)) * wind.speed;
+        const velocity_x = Math.cos(frame.windDirection * (Math.PI/180)) * wind.speed;
         const MAP_HEIGHT = 0;
+        const windTick = frame.tick - this.keyFinder(frame.tick);
         this.sources.forEach((source:ContaminationSource) => {
             for (let i=0; i<frame.map.length; i++) {
                 for (let j=0; j<frame.map[i].length; j++) {
+
                     const c =
                         (
                             (
@@ -139,7 +144,7 @@ export class Simulation {
                                 - (
                                     Math.pow(
                                         this.haversineDistance(frame.map[i][j].lat, source.lng, source.lat, source.lng)
-                                        - velocity_x*frame.tick*60,
+                                        - velocity_x*windTick*60,
                                         2)
                                     / 2*source.dispersionHorizontal*source.dispersionHorizontal
                                 )
@@ -148,7 +153,7 @@ export class Simulation {
                                 - (
                                     Math.pow(
                                         this.haversineDistance(source.lat, frame.map[i][j].lng, source.lat, source.lng)
-                                        - velocity_y*frame.tick*60,
+                                        - velocity_y*windTick*60,
                                         2)
                                     / 2*source.dispersionHorizontal*source.dispersionHorizontal
                                 )

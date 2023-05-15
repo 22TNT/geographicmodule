@@ -197,12 +197,13 @@ app.get("/simulation/v2/:id/frame/:index", (req: Request, res: Response) => {
         frame = simulations[req.params.id].frames[index];
     }
 
+    const nodeLen = simulations[req.params.id].length;
     let nodes: ExportableNode[] = [];
     for (let i = 0; i < frame.map.length; i++) {
         for (let j = 0; j < frame.map[i].length; j++) {
             const node = frame.map[i][j];
             if (node.contaminations.length !== 0) {
-                const latlng: [number, number] = Simulation.prototype.getOffsetCoords(node.lat, node.lng, len, len);
+                const latlng: [number, number] = Simulation.prototype.getOffsetCoords(node.lat, node.lng, nodeLen, nodeLen);
                 nodes.push({
                     lat1: node.lat,
                     lng1: node.lng,
