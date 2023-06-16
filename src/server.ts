@@ -257,6 +257,16 @@ app.get("/simulation/v3/:id/frame/:index", (req: Request, res: Response) => {
     res.status(200).send(nodes);
 })
 
+app.get("/simulation/:id/frame/length", (req: Request, res: Response) => {
+    // get sim[id].frames.length
+
+    if (!simulations[req.params.id]) {
+        res.status(404).send("No simulation with that id");
+    }
+
+    res.status(200).send(simulations[req.params.id].frames.length);
+})
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`)
 });
