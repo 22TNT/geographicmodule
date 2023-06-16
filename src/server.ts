@@ -40,6 +40,7 @@ app.post("/simulation/:id/contamination", (req: Request, res: Response) => {
     // add new contamination
     if (!simulations[req.params.id]) {
         res.status(404).json("No simulation with that id");
+        return;
     }
     const {
         lat,
@@ -57,6 +58,7 @@ app.post("/simulation/:id/contamination", (req: Request, res: Response) => {
 app.post("/simulation/:id/source", (req: Request, res:Response) => {
     if (!simulations[req.params.id]) {
         res.status(404).json("No simulation with that id");
+        return;
     }
     const {
         lat,
@@ -88,6 +90,7 @@ app.post("/simulation/:id/frame", (req: Request, res: Response) => {
     // advance by a number of frames
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     const frames: number = req.body.frames;
@@ -104,6 +107,7 @@ app.post("/simulation/:id/frame", (req: Request, res: Response) => {
 app.post("/simulation/:id/wind", (req: Request, res: Response) => {
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     const {
@@ -131,6 +135,7 @@ app.get("/simulation/:id/frame/:index", (req: Request, res: Response) => {
     // get a certain frame
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     if (simulations[req.params.id].frames.length === 0) {
@@ -152,6 +157,7 @@ app.get("/simulation/:id/frame/:index", (req: Request, res: Response) => {
 app.get("/simulation/:id/info", (req: Request, res: Response) => {
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     const sim = simulations[req.params.id];
@@ -168,6 +174,7 @@ app.get("/simulation/:id/info", (req: Request, res: Response) => {
 app.get("/simulation/:id/source", (req: Request, res: Response) => {
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     const sim = simulations[req.params.id];
@@ -178,6 +185,7 @@ app.get("/simulation/v2/:id/frame/:index", (req: Request, res: Response) => {
     // get all not empty nodes from a frame with all 4 coords
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     if (simulations[req.params.id].frames.length === 0) {
@@ -224,6 +232,7 @@ app.get("/simulation/v3/:id/frame/:index", (req: Request, res: Response) => {
 
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
     const len = simulations[req.params.id].frames.length;
     const index = parseInt(req.params.index);
@@ -262,6 +271,7 @@ app.get("/simulation/:id/frames", (req: Request, res: Response) => {
 
     if (!simulations[req.params.id]) {
         res.status(404).send("No simulation with that id");
+        return;
     }
 
     res.status(200).json(simulations[req.params.id].frames.length);
