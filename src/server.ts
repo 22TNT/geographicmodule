@@ -218,6 +218,45 @@ app.get("/simulation/v2/:id/frame/:index", (req: Request, res: Response) => {
 
 });
 
+app.get("/simulation/v3/:id/frame/:index", (req: Request, res: Response) => {
+    // seek :index frame or create it if it doesn't exist and
+    // get all coords of all non-empty zones in that frame
+
+    if (!simulations[req.params.id]) {
+        res.status(404).send("No simulation with that id");
+    }
+    const len = simulations[req.params.id].frames.length;
+    const index = parseInt(req.params.index);
+    const nodeLen = simulations[req.params.id].length;
+    let frame: Frame;
+    let nodes: ExportableNode[] = [];
+
+    if (index < 0) {
+        res.status(400).send("Index must be 0 or bigger");
+    }
+
+    while (simulations[req.params.id].frames.length <= index) {
+        simulations[req.params.id].nextFrame();
+    }
+    frame = simulations[req.params.id].frames[index];
+    for (let i = 0; i < frame.map.length; i++) {
+        for (let j = 0; j < frame.map[i].length; j++) {
+            const node = frame.map[i][j];
+            if (node.contaminations.length !== 0) {
+                const latlng: [number, number] = Simulation.prototype.getOffsetCoords(node.lat, node.lng, nodeLen, nodeLen);
+                nodes.push({
+                    lat1: node.lat,
+                    lng1: node.lng,
+                    lat2: latlng[0],
+                    lng2: latlng[1],
+                    contamination: node.contaminations,
+                });
+            }
+        }
+    }
+    res.status(200).send(nodes);
+})
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`)
 });
