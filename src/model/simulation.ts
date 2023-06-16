@@ -109,83 +109,191 @@ export class Simulation {
         frame.tick+=1;
         frame.id=nanoid();
         const wind: Wind = this.winds.get(this.keyFinder(frame.tick));
-        frame.windDirection = wind.direction;
+        frame.windDirection = wind.direction % 360;
         frame.windSpeed = wind.speed;
         frame.timeOfDay = (frame.timeOfDay+1)%1440; // 1440 = minutes in a day
 
+        // do contamination propagation stuff
 
-        /*if (this.keyFinder(frame.tick) === frame.tick) {
-            for (let i=0; i<frame.map.length; i++) {
-                for (let j=0; j<frame.map[i].length; j++) {
-                    frame.map[i][j].contaminations = [];
+        let direction;
+        let dir_code = "";
+        if (0 <= frame.windDirection && frame.windDirection < 90) {
+            direction = frame.windDirection;
+            dir_code = "NE";
+        }
+        else if (90 <= frame.windDirection && frame.windDirection < 180) {
+            direction = 180 - frame.windDirection;
+            dir_code = "SE";
+        }
+        else if (180 <= frame.windDirection && frame.windDirection < 270) {
+            direction = 180 + frame.windDirection;
+            dir_code = "SW";
+        }
+        else if (270 <= frame.windDirection && frame.windDirection < 360) {
+            direction = 360 - frame.windDirection;
+            dir_code = "NW";
+        }
+        /*
+        else {
+            throw "Unreachable";
+        }
+        */
+        if (frame.windDirection === 0) {
+            dir_code = "N";
+        }
+        else if (frame.windDirection === 90) {
+            dir_code = "E";
+        }
+        else if (frame.windDirection === 180) {
+            dir_code = "S";
+        }
+        else if (frame.windDirection === 270) {
+            dir_code = "W";
+        }
+
+        const newton = (
+            frame: Frame,
+            i: number,
+            j: number,
+            source: ContaminationSource,
+            windTick: number,
+            velocity_x: number,
+            velocity_y: number
+        ) => {
+            const c = (
+                (
+                    (source.power)
+                    / (Math.pow(2*Math.PI, 3/2)
+                        * source.dispersionVertical
+                        * source.dispersionHorizontal
+                        * source.dispersionHorizontal)
+                )
+                * Math.exp(
+                    - (
+                        Math.pow(
+                            this.haversineDistance(frame.map[i][j].lat, source.lng, source.lat, source.lng)
+                            - velocity_x*windTick*60,
+                            2)
+                        / 2*source.dispersionHorizontal*source.dispersionHorizontal
+                    )
+                )
+                * Math.exp(
+                    - (
+                        Math.pow(
+                            this.haversineDistance(source.lat, frame.map[i][j].lng, source.lat, source.lng)
+                            - velocity_y*windTick*60,
+                            2)
+                        / 2*source.dispersionHorizontal*source.dispersionHorizontal
+                    )
+                )
+                * (
+                    Math.exp(
+                        - (
+                            Math.pow(
+                                MAP_HEIGHT - source.height,
+                                2
+                            )
+                            / 2*source.dispersionVertical*source.dispersionVertical
+                        )
+                    )
+                    + Math.exp(
+                        - (
+                            Math.pow(
+                                MAP_HEIGHT + source.height,
+                                2
+                            )
+                            / 2*source.dispersionVertical*source.dispersionVertical
+                        )
+                    )
+                )
+            )
+            if (c > 0) {
+                frame.map[i][j].contaminations.push({
+                    material: source.material,
+                    levelOfContamination: c,
+                })
+            }
+        }
+
+        const getIJOfSource = (frame: Frame, source: ContaminationSource): [number, number] => {
+            let source_i = frame.map.length-1;
+            let source_j = frame.map[0].length-1;
+            for (let i=0; i<frame.map.length-1; i++) {
+                if (frame.map[i][0].lat <= source.lat && source.lat < frame.map[i+1][0].lat) {
+                    source_i = i;
+                    break;
                 }
             }
-        }*/
+            for (let j=0; j<frame.map[source_i].length-1; j++) {
+                if (frame.map[source_i][j].lng <= source.lng && source.lng < frame.map[source_i][j+1].lng) {
+                    source_j = j;
+                    break;
+                }
+            }
 
-        // do contamination propagation stuff
-        const velocity_y = Math.sin(frame.windDirection * (Math.PI/180)) * wind.speed;
-        const velocity_x = Math.cos(frame.windDirection * (Math.PI/180)) * wind.speed;
+            return [source_i, source_j];
+        }
+
+        const velocity_y = Math.sin(direction * (Math.PI/180)) * wind.speed;
+        const velocity_x = Math.cos(direction * (Math.PI/180)) * wind.speed;
         const MAP_HEIGHT = 0;
-        const windTick = frame.tick - this.keyFinder(frame.tick);
+        const windTick = frame.tick - Math.max(this.keyFinder(frame.tick), 1) + 1;
         this.sources.forEach((source:ContaminationSource) => {
-            for (let i=0; i<frame.map.length; i++) {
-                for (let j=0; j<frame.map[i].length; j++) {
+            let i_min, i_max, j_min, j_max;
+            const src_i = getIJOfSource(frame, source)[0];
+            const src_j = getIJOfSource(frame, source)[1];
 
-                    const c =
-                        (
-                            (
-                                (source.power)
-                                / (Math.pow(2*Math.PI, 3/2)
-                                    * source.dispersionVertical
-                                    * source.dispersionHorizontal
-                                    * source.dispersionHorizontal)
-                            )
-                            * Math.exp(
-                                - (
-                                    Math.pow(
-                                        this.haversineDistance(frame.map[i][j].lat, source.lng, source.lat, source.lng)
-                                        - velocity_x*windTick*60,
-                                        2)
-                                    / 2*source.dispersionHorizontal*source.dispersionHorizontal
-                                )
-                            )
-                            * Math.exp(
-                                - (
-                                    Math.pow(
-                                        this.haversineDistance(source.lat, frame.map[i][j].lng, source.lat, source.lng)
-                                        - velocity_y*windTick*60,
-                                        2)
-                                    / 2*source.dispersionHorizontal*source.dispersionHorizontal
-                                )
-                            )
-                            * (
-                                Math.exp(
-                                    - (
-                                        Math.pow(
-                                            MAP_HEIGHT - source.height,
-                                            2
-                                        )
-                                        / 2*source.dispersionVertical*source.dispersionVertical
-                                    )
-                                )
-                                + Math.exp(
-                                    - (
-                                        Math.pow(
-                                            MAP_HEIGHT + source.height,
-                                            2
-                                        )
-                                        / 2*source.dispersionVertical*source.dispersionVertical
-                                    )
-                                )
-                            )
-                        )
-                    if (c > 0) {
-                        frame.map[i][j].contaminations.push({
-                            material: source.material,
-                            levelOfContamination: c,
-                        })
-
-                    }
+            if (dir_code === "N") {
+                i_min = src_i;
+                i_max = frame.map.length-1;
+                j_min = 0;
+                j_max = frame.map[0].length-1;
+            }
+            else if (dir_code === "S") {
+                i_min = 0;
+                i_max = src_i;
+                j_min = 0;
+                j_max = frame.map[0].length-1;
+            }
+            else if (dir_code === "E") {
+                i_min = 0;
+                i_max = frame.map.length-1;
+                j_min = src_j;
+                j_max = frame.map[0].length-1;
+            }
+            else if (dir_code === "W") {
+                i_min = 0;
+                i_max = frame.map.length-1;
+                j_min = 0;
+                j_max = src_j;
+            }
+            else if (dir_code === "NE") {
+                i_min = src_i;
+                i_max = frame.map.length-1;
+                j_min = src_j;
+                j_max = frame.map[0].length-1;
+            }
+            else if (dir_code === "SE") {
+                i_min = 0;
+                i_max = src_i;
+                j_min = src_j;
+                j_max = frame.map[0].length-1;
+            }
+            else if (dir_code === "SW") {
+                i_min = 0;
+                i_max = src_i;
+                j_min = 0;
+                j_max = src_j;
+            }
+            else if (dir_code === "NW") {
+                i_min = src_i;
+                i_max = frame.map.length-1;
+                j_min = 0;
+                j_max = src_j;
+            }
+            for (let i=i_min; i<i_max; i++) {
+                for (let j=j_min; j<j_max; j++) {
+                    newton(frame, i, j, source, windTick, velocity_x, velocity_y);
                 }
             }
 
