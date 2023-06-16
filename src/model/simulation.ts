@@ -133,11 +133,6 @@ export class Simulation {
             direction = 360 - frame.windDirection;
             dir_code = "NW";
         }
-        /*
-        else {
-            throw "Unreachable";
-        }
-        */
         if (frame.windDirection === 0) {
             dir_code = "N";
         }
@@ -174,7 +169,7 @@ export class Simulation {
                             this.haversineDistance(frame.map[i][j].lat, source.lng, source.lat, source.lng)
                             - velocity_x*windTick*60,
                             2)
-                        / 2*source.dispersionHorizontal*source.dispersionHorizontal
+                        / 2*source.dispersionHorizontal*source.dispersionHorizontal*windTick
                     )
                 )
                 * Math.exp(
@@ -183,7 +178,7 @@ export class Simulation {
                             this.haversineDistance(source.lat, frame.map[i][j].lng, source.lat, source.lng)
                             - velocity_y*windTick*60,
                             2)
-                        / 2*source.dispersionHorizontal*source.dispersionHorizontal
+                        / 2*source.dispersionHorizontal*source.dispersionHorizontal*windTick
                     )
                 )
                 * (
@@ -193,7 +188,7 @@ export class Simulation {
                                 MAP_HEIGHT - source.height,
                                 2
                             )
-                            / 2*source.dispersionVertical*source.dispersionVertical
+                            / 2*source.dispersionVertical*source.dispersionVertical*windTick
                         )
                     )
                     + Math.exp(
@@ -202,7 +197,7 @@ export class Simulation {
                                 MAP_HEIGHT + source.height,
                                 2
                             )
-                            / 2*source.dispersionVertical*source.dispersionVertical
+                            / 2*source.dispersionVertical*source.dispersionVertical*windTick
                         )
                     )
                 )
